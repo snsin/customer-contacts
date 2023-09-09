@@ -1,0 +1,367 @@
+openapi: "3.0.3"
+info:
+  title: "Customer contacts API"
+  description: "Simple API allows to create and view customers and contacts"
+  version: "1.0.0"
+servers:
+  - url: "http://localhost:8080"
+    description: localhost, available only after application started
+paths:
+  /api/v1/customers:
+    post:
+      summary: "POST api/v1/customers"
+      operationId: "createCustomer"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CustomerDto"
+        required: true
+      responses:
+        "200":
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CustomerDto"
+        "400":
+          description: "Invalid customer name supplied"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: "Customer saving failed because of DB constraints violation"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    get:
+      summary: "GET api/v1/customers"
+      operationId: "getCustomers"
+      parameters:
+        - name: "pageNumber"
+          description: number of page, 0 if omitted or less than zero
+          in: "query"
+          required: false
+          schema:
+            type: "integer"
+            format: "int32"
+          example: 0
+        - name: "pageSize"
+          description: page size, 2147483647 if omitted or less than 1
+          in: "query"
+          required: false
+          schema:
+            type: "integer"
+            format: "int32"
+      responses:
+        "200":
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Page<CustomerBriefDto>"
+        "400":
+          description: "Invalid pageNumber or pageSize (letters for example) parameters supplied"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/v1/customers/{customerId}/contacts:
+    post:
+      summary: "POST api/v1/customers/{customerId}/contacts"
+      operationId: "addContact"
+      parameters:
+        - name: "customerId"
+          in: "path"
+          required: true
+          schema:
+            type: "integer"
+            format: "int64"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ContactDto"
+        required: true
+      responses:
+        "200":
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContactDto"
+        "400":
+          description: "Invalid customer ID or/and invalid contact parameters supplied"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: "Customer not found"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: "Contact saving failed because of DB constraints violation"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    get:
+      summary: "GET api/v1/customers/{customerId}/contacts"
+      operationId: "getCustomerContacts"
+      parameters:
+        - name: "customerId"
+          in: "path"
+          required: true
+          schema:
+            type: "integer"
+            format: "int64"
+        - name: "type"
+          in: "query"
+          required: false
+          schema:
+            type: "string"
+            enum:
+              - "EMAIL"
+              - "PHONE"
+      responses:
+        "200":
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "array"
+                items:
+                  $ref: "#/components/schemas/ContactDto"
+        "400":
+          description: "Invalid customer ID supplied"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: "Customer not found"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/v1/customers/{customerId}:
+    get:
+      summary: "GET api/v1/customers/{customerId}"
+      operationId: "getCustomer"
+      parameters:
+        - name: "customerId"
+          in: "path"
+          required: true
+          schema:
+            type: "integer"
+            format: "int64"
+      responses:
+        "200":
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CustomerDto"
+        "400":
+          description: "Invalid customer ID supplied"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: "Customer not found"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+components:
+  schemas:
+    "Page<CustomerBriefDto>":
+      type: object
+      description: page of customers sorted by ID ascending
+      properties:
+        content:
+          type: array
+          description: page of customers in brief format with page size specified in pageable.pageSize
+          minLength: 0
+          maxLength: 2147483647
+          items:
+            $ref: '#/components/schemas/CustomerBriefDto'
+        pageable:
+          type: object
+          properties:
+            pageNumber:
+              description: page number
+              type: integer
+              format: int32
+              minimum: 0
+              maximum: 2147483647
+              example: 0
+            pageSize:
+              description: maximum elements count for page
+              type: integer
+              format: int32
+              minimum: 1
+              maximum: 2147483647
+              example: 2147483647
+            sort:
+              $ref: '#/components/schemas/Sort'
+            offset:
+              type: integer
+              format: int64
+              example: 0
+            paged:
+              type: boolean
+              example: true
+            unpaged:
+              type: boolean
+              example: false
+        last:
+          description: true if current page is last
+          type: boolean
+          example: true
+        totalPages:
+          description: overall page count
+          type: integer
+          format: int32
+          example: 1
+        totalElements:
+          description: total customers count
+          type: integer
+          format: int64
+          example: 4
+        size:
+          description: page size
+          type: integer
+          format: int32
+          example: 2147483647
+        number:
+          description: page number
+          type: integer
+          example: 0
+        sort:
+          $ref: '#/components/schemas/Sort'
+        first:
+          description: true if current page is first
+          type: boolean
+          example: true
+        numberOfElements:
+          description: count of elements placed on current page
+          type: integer
+          format: int32
+          example: 4
+          minimum: 0
+        empty:
+          description: true if page is empty
+          type: boolean
+          example: false
+    Sort:
+      type: object
+      description: sort flags
+      properties:
+        empty:
+          type: boolean
+          example: false
+        sorted:
+          type: boolean
+          example: true
+        unsorted:
+          type: boolean
+          example: false
+    CustomerDto:
+      required:
+        - name
+      type: "object"
+      properties:
+        id:
+          type: "integer"
+          format: "int64"
+          description: internal customer ID, starts with 1
+          minimum: 1
+          example: 1
+        name:
+          required: should contains at least one not-blank character
+          type: "string"
+          description: customer name
+          example: test1
+          minLength: 1
+          maxLength: 255
+        contactsCount:
+          type: "integer"
+          format: "int64"
+          description: count of customer contacts
+          minimum: 0
+          maximum: 2147483647
+          example: 2
+    ContactDto:
+      type: "object"
+      required:
+        - contactType
+        - contactValue
+      properties:
+        id:
+          type: "integer"
+          format: "int64"
+          description: internal contact ID, starts with 1
+          minimum: 1
+          example: 5
+        contactType:
+          type: "string"
+          description: contact type
+          required: should be one of the enumeration elements, case sensitive, other values are rejected
+          enum:
+            - "EMAIL"
+            - "PHONE"
+          example: "PHONE"
+        contactValue:
+          description: contact value - email address or phone number
+          required:
+            EMAIL - should contains '@' character; overall length up to 255 characters.
+            PHONE - should consist of optional '+' sign and digits 0-9 which may be separated by space, dash
+            or round brackets; overall length from 8 to 16 characters
+          type: "string"
+          minLength: 1
+          maxLength: 255
+          example: '+7(777)777-77-77'
+    CustomerBriefDto:
+      type: "object"
+      properties:
+        id:
+          type: "integer"
+          format: "int64"
+          description: internal customer ID
+          example: 10
+        name:
+          type: "string"
+          description: customer name
+          example: test test
+    ErrorResponse:
+      type: "object"
+      properties:
+        type:
+          type: "string"
+          example: about:blank
+        title:
+          type: "string"
+          example: Unprocessable Entity
+        status:
+          type: "integer"
+          format: "http status code"
+          example: 422,
+        detail:
+          type: "string"
+          example: can't save or update entity
+        instance:
+          type: "string"
+          format: "resource path"
+          example: /api/v1/customers
+        timestamp:
+          type: "string"
+          format: "timestamp with time-zone"
+          example: "2023-09-13T11:57:37.6733499+03:00"
