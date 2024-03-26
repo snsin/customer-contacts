@@ -4,7 +4,8 @@
 
 > Two steps to start application
 > 1. download or clone code
-> 2. run `./gradlew clean bootRun` on linux or `gradlew.bat clean bootRun` on winwows
+> 2. run `./gradlew clean bootRun --args='--spring.profiles.active=production'` on linux
+or `gradlew.bat clean bootRun --args='--spring.profiles.active=production'` on winwows
 
 Simple API allows to create and view customers and contacts
 
@@ -42,7 +43,7 @@ curl -X POST http://localhost:8080/api/v1/customers \
 
 ```json
 {
-  "name": "test1",
+  "name": "test1"
 }
 ```
 
